@@ -28,23 +28,28 @@ public class ClipboardService extends Service {
         @Override
         public void onPrimaryClipChanged() {
             if (clipboardManager.hasPrimaryClip() && clipboardManager.getPrimaryClip().getItemCount() > 0) {
-                CharSequence text = clipboardManager.getPrimaryClip().getItemAt(0).getText();
-                if (text != null) {
+                CharSequence clipContent = clipboardManager.getPrimaryClip().getItemAt(0).getText();
+                if (clipContent != null) {
+                    String text = clipContent.toString();
                     // 监测到有复制剪切
-                    Toast.makeText(ClipboardService.this, COPIED + text.toString(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ClipboardService.this, COPIED + text, Toast.LENGTH_SHORT).show();
+                    // 判断内容并决定是否发起网络请求
+                    if (text.startsWith("http://") || text.startsWith("https://")) {
+                        // 发起网络请求
+                        cn.fuxiaosong.app.link.network.Service.addLink(text, "", "", new OnDoneListener() {
+                            @Override
+                            public void onFailed(String errMeg) {
+                                Toast.makeText(ClipboardService.this, ADD_LINK + errMeg, Toast.LENGTH_SHORT).show();
+                            }
 
-                    // 发起网络请求
-                    cn.fuxiaosong.app.link.network.Service.addLink(text.toString(), "", "", new OnDoneListener() {
-                        @Override
-                        public void onFailed(String errMeg) {
-                            Toast.makeText(ClipboardService.this, ADD_LINK + errMeg, Toast.LENGTH_SHORT).show();
-                        }
-
-                        @Override
-                        public void onSuccess(Response data) {
-                            Toast.makeText(ClipboardService.this, ADD_LINK + data.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                            @Override
+                            public void onSuccess(Response data) {
+                                Toast.makeText(ClipboardService.this, ADD_LINK + data.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    } else {
+                        Toast.makeText(ClipboardService.this, COPIED + "url is not correct", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         }
